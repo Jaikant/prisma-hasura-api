@@ -1,0 +1,144 @@
+// Data source
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Generator
+generator client {
+  provider = "prisma-client-js"
+  //provider = "prisma-erd-generator"
+}
+
+// Data model
+model User {
+  id   String @id @default(cuid())
+  email String  @unique
+  name  String?
+  password  String
+  companies  CompanyOnUser[]
+  userroles  UserCompanyRoles[]
+}
+
+model Company {
+  id   String @id @default(cuid())
+  companyName String
+  subIndustries CompanyOnSubIndustry[]
+  users CompanyOnUser[]
+  companyroles  UserCompanyRoles[]
+  seller Seller?
+  broker Broker?
+  buyer  Buyer?
+}
+
+// company can have many users. User can have many companies.
+model CompanyOnUser {
+  company Company @relation(fields : [companyId], references: [id])
+  companyId  String
+  user  User @relation(fields: [userId], references: [id])
+  userId  String
+  @@id([companyId, userId])
+}
+
+enum BizzRoles {
+  SELLER 
+  BROKER 
+  BUYER
+  ADMIN
+  ACCOUNTANT
+}
+
+// For assigning user multiple roles within multiple companies.
+model UserCompanyRoles {
+ user   User @relation(fields: [userId], references: [id])
+ userId String
+
+ company   Company @relation(fields: [companyId], references: [id])
+ companyId String
+
+ assignedroles BizzRoles[]
+ @@id(fields: [userId, companyId])
+}
+
+
+// Table of subindustries - each connected to a single industry. connected to multiple companies.
+model SubIndustry {
+ id   String @id @default(cuid())
+ SubIndustry String
+ companies CompanyOnSubIndustry[]
+ industry  Industry @relation(fields: [industryId], references: [id])
+ industryId String
+}
+
+// Table of industries - each connected to multiple subindustries.
+model Industry {
+ id   String @id @default(cuid())
+ industry String
+ subIndustry SubIndustry[]
+}
+
+// Connects companies to multiple subindustries.
+model CompanyOnSubIndustry {
+  company  Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  subIndustry SubIndustry @relation(fields: [subIndustryId], references: [id])
+  subIndustryId  String
+
+  @@id([companyId, subIndustryId])
+}
+
+model Seller {
+   id   String @id @default(cuid())
+   company Company @relation(fields: [companyId], references: [id])
+   companyId String @unique
+   brokers SellerOnBroker[]
+   buyers  SellerOnBuyer[]
+   sellerRating Int
+}
+
+model Broker {
+  id   String @id @default(cuid())
+  company Company @relation(fields: [companyId], references: [id])
+  companyId String @unique
+  sellers  SellerOnBroker[]
+  buyers  BuyerOnBroker[]
+}
+
+model Buyer {
+  id   String @id @default(cuid())
+  company Company @relation(fields: [companyId], references: [id])
+  companyId String @unique
+  brokers BuyerOnBroker[]
+  sellers  SellerOnBuyer[]
+}
+
+model SellerOnBroker {
+  seller  Seller @relation(fields: [sellerId], references: [id])
+  sellerId String
+
+  broker Broker @relation(fields: [brokerId], references: [id])
+  brokerId  String
+
+  @@id([sellerId, brokerId])
+}
+
+model SellerOnBuyer {
+  seller  Seller @relation(fields: [sellerId], references: [id])
+  sellerId String
+
+  buyer Buyer @relation(fields: [buyerId], references: [id])
+  buyerId  String
+
+  @@id([sellerId, buyerId])
+}
+
+model BuyerOnBroker {
+  buyer  Buyer @relation(fields: [buyerId], references: [id])
+  buyerId String
+
+  broker Broker @relation(fields: [brokerId], references: [id])
+  brokerId  String
+
+  @@id([buyerId, brokerId])
+}

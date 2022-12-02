@@ -1,0 +1,22 @@
+version: '3.6'
+services:
+  my-postgres:
+    image: postgres:12
+    restart: always
+    ports:
+      - '5434:5434'
+    volumes:
+    - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command: -p 5434
+
+volumes:
+  db_data:
+
+networks:
+  default:
+    name: my_network
+
+## We need the ports up, because event service is not on docker.
